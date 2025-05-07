@@ -58,14 +58,14 @@ jobs:
             tag_links=$(grep -i "$tag" console_output.log || echo "No URLs logged for $tag")
 
             # Build release note
-            echo 'This release provides **structured CCNA exam data** covering all modules from CCNA v7.0 curriculum, available in multiple convenient formats for study and programmatic use.  For full details on each format and how to use them, see the [Formats Guide](./readme.md#available-formats).' > tmp_release_note.txt
+            echo 'This release provides **structured CCNA exam data** covering all modules from CCNA v7.0 curriculum, available in multiple formats for study and programmatic use.  For full details on each format and how to use them, see the [Formats Guide](./readme.md#available-formats).' > tmp_release_note.txt
             echo ""                                                                                         >> tmp_release_note.txt
             # Fenced code block for Last updated
-            echo '```bash'                                                                                >> tmp_release_note.txt
+            echo '`'                                                                                >> tmp_release_note.txt
             echo "Last updated: $(date -u +'%Y-%m-%d %H:%M UTC')"                                                  >> tmp_release_note.txt
-            echo '```'                                                                                    >> tmp_release_note.txt
+            echo '`'                                                                                    >> tmp_release_note.txt
             echo ""                                                                                         >> tmp_release_note.txt
-            echo "**Covered Modules: **"                                                                    >> tmp_release_note.txt
+            echo "**Covered Modules:**"                                                                    >> tmp_release_note.txt
             echo ""                                                                                         >> tmp_release_note.txt
             echo "$tag_links"                                                                               >> tmp_release_note.txt
 
