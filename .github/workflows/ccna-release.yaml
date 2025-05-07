@@ -30,7 +30,7 @@ jobs:
       - name: Run parsing script
         run: |
           mkdir -p output/zips
-          Rscript ccna-library-parse.R output/zips
+          Rscript R/scrpits/ccna-library-parse.R output/zips
 
       - name: Upload files to GitHub Release(s)
         env:
