@@ -26,11 +26,23 @@ library(xml2, quietly = TRUE, warn.conflicts = FALSE)
 library(purrr, quietly = TRUE, warn.conflicts = FALSE)
 library(jsonlite, quietly = TRUE, warn.conflicts = FALSE)
 
-get_formated_questions <- function(url) {
-    # Generate a file name based on the URL
-    file_name <- paste0(gsub("-", "_", gsub(".html$", "", basename(url))), ".json")
+#' Takes in a url to a webpage containing questions and parses them into a structured format
+#' sutable for use with an formats created.
+#'
+#' @param url url to hosted webpage containing questions to be parsed
+#'
+#' @return A tibble containing the following information:
+#'  parsed questions
+#'  options
+#'  correct answers
+#'  planations
+#'  metadata
+#'
+get_formated_questions <- function(url, file_name) {
     # Download the HTML content from the URL (or cache)
     html_content <- download_fromHTML(url)
+    # Extract the page title from the HTML content
+    exam_title <- html_content %>% rvest::html_element("h1") %>% rvest::html_text(trim = TRUE)
     # Remove unwanted elements from the HTML content
     wpd <- rvest::html_element(html_content, "div#wpdcom")
     if (!is.na(wpd)) xml2::xml_remove(wpd)
@@ -53,7 +65,7 @@ get_formated_questions <- function(url) {
         # Get the text content of the node
         text <- rvest::html_text2(nd)
         # Detect if current node is a question
-        if ((tag == "h4" || (tag == "p" && str_detect(text, "^\\s*\\d+\\."))) && nchar(text)) {
+        if ((tag == "h4" || (tag == "p" && str_detect(text, "^\\s*\\d+\\."))) && nchar(text) > 0 && !str_detect(tolower(text), "match")) {
             # If we were already in a question, save it before starting a new one
             if (!is.null(current_question)) question_blocks <- append(question_blocks, list(current_question))
             # Start a new question block
@@ -75,11 +87,11 @@ get_formated_questions <- function(url) {
         #' Helper function to determine if an option is valid and meets criteria
         #' set up to filter out invalid options
         keep_option <- function(opt) {
-            bad <- c("ccna", "explain:", "answer:", "thanks", "reply", "valid")
+            bad <- c("ccna", "explain:", "answer:", "thanks", "reply", "valid", "explanation:")
             # Accept even very short tokens (e.g. STP, VTP, DTP) as long as they are
             # 2–4 uppercase letters or longer words. Reject only if it matches junk.
             too_short_and_not_acronym <- nchar(opt) < 2 ||
-                (nchar(opt) < 5 && !str_detect(opt, "^[A-Z]{2,4}$"))
+                (nchar(opt) < 3 && !str_detect(opt, "^[A-Z]{2,4}$"))
             if (too_short_and_not_acronym) return(FALSE)
             !any(map_lgl(bad, ~ str_starts(tolower(opt), .x)))
         }
@@ -124,10 +136,14 @@ get_formated_questions <- function(url) {
          options = purrr::map(question_blocks, "options"),
          correct_index = purrr::map(question_blocks, "correct"),
          explanation = purrr::map_chr(question_blocks, "explanation")
-    ) %>% dplyr::filter(purrr::map_int(options, length) <= 8)
+    ) %>%
+    # Filter out questions with no options or too many options
+    dplyr::filter(purrr::map_int(options, length) <= 8) %>%
+    dplyr::filter(purrr::map_int(options, length) > 1)
+    questions_final$questions <- questions_final
+    # Add title to the final questions tibble
+    questions_final$title <- exam_title
     # Save the final questions tibble to a JSON file
-    jsonlite::write_json(questions_final, paste0("data/processed/", file_name), pretty = TRUE, auto_unbox = TRUE)
+    saveRDS(questions_final, file_name)
     questions_final # Return the final questions tibble
 }
-
-get_formated_questions("https://itexamanswers.net/ccna-2-v7-0-final-exam-answers-full-switching-routing-and-wireless-essentials.html")
