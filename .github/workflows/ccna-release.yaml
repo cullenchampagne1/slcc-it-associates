@@ -13,13 +13,13 @@ jobs:
   build-and-release:
     runs-on: ubuntu-latest
     permissions:
-      contents: write          # needed for creating / editing releases
+      contents: write        # create / edit releases
 
     steps:
-      # -----------------------------------------------------------
-      # 1. checkout & set up R
-      # -----------------------------------------------------------
-      - name: Checkout repo
+      # -----------------------------------------------------
+      # 1. checkout + R setup
+      # -----------------------------------------------------
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up R
@@ -32,43 +32,53 @@ jobs:
             "httr","jsonlite","readr","purrr","digest"
           ))'
 
-      # -----------------------------------------------------------
-      # 2. run the parser – all console output captured
-      # -----------------------------------------------------------
+      # -----------------------------------------------------
+      # 2. run parser – capture console output
+      # -----------------------------------------------------
       - name: Run parsing script and capture output
         run: |
           mkdir -p output/zips
           Rscript R/scrpits/ccna-library-parse.R output/zips \
-            | tee console_output.log           # ⬅ keeps a copy for later
+            | tee console_output.log
 
-      # -----------------------------------------------------------
-      # 3. create / update releases and upload artefacts
-      # -----------------------------------------------------------
+      # -----------------------------------------------------
+      # 3. create / update releases + upload assets
+      # -----------------------------------------------------
       - name: Create or update releases and upload files
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # ── collect unique release :contentReference[oaicite:1]{index=1}
+          # tags = prefix before first “‑” of every zip
+          tags=$(find output/zips -type f -name '*.zip' -printf '%f\n' \
+                   | cut -d'-' -f1 | sort -u)
 
-            # all zip files that:contentReference[oaicite:2]{index=2}any URLs your script printe:contentReference[oaicite:3]{index=3} release n:contentReference[oaicite:4]{index=4}red CCNA exam data." \
-              "Each exam is processed and packaged into multiple formats." \
-              "For full details on each format and how to use them, see the [Formats Guide](./readme.md#available-formats)" \
-              "" \
-              "included urls:" \
-              "$tag_links" > tmp_release_note.txt
+          for tag in $tags; do
+            echo "▶ processing tag: $tag"
 
-            # ── create or edit the release ──
+            files=$(find output/zips -type f -name "${tag}-*.zip")
+            tag_links=$(grep -i "$tag" console_output.log || echo "No URLs logged for $tag")
+
+            # ---------- compose release note ----------
+            cat > tmp_release_note.txt <<'EOF'
+This release contains structured CCNA exam data. Each exam is processed and packaged into multiple formats. For full details on each format and how to use them, see the [Formats Guide](./readme.md#available-formats).
+
+included urls:
+EOF
+            # append dynamic list of URLs
+            echo "$tag_links" >> tmp_release_note.txt
+
+            # ---------- create or update release ----------
             if gh release view "$tag" >/dev/null 2>&1; then
-              echo "  ↻ updating release $tag"
+              echo "↻ updating release $tag"
               gh release edit "$tag" --notes-file tmp_release_note.txt
             else
-              echo "  ➕ creating release $tag"
-              gh release create "$tag" -t "$tag" --notes-file tmp_release_note.txt
+              echo "➕ creating release $tag"
+              gh release create "$tag" --title "$tag" --notes-file tmp_release_note.txt
             fi
 
-            # ── upload artefacts ──
+            # ---------- upload zip assets ----------
             for f in $files; do
-              echo "    📦 $(basename "$f")"
+              echo "  📦 $(basename "$f")"
               gh release upload "$tag" "$f" --clobber
             done
           done
