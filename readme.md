@@ -8,9 +8,9 @@ This repository contains the a canvas/ccna export test bank for the IT Associate
 - **CSV** - Simply 2 column layout (quetsion and answer)
 - **GoogleForms** - CSV layout sutable for google form import (Need [Form Builder](https://workspace.google.com/marketplace/app/form_builder/133781775166) Plugin)
 - **Quizlet** - Txt file with `|` delimited question and answers for import into Quizlet.com
-- **Kahoot** - Csv layout sutable for kayhoot.com import (most sets are to large)
-- **Quizziz** - Csv layout sutable for quizziz.com import with photos
-- **Rds** - Raw data for use if programming
+- **Kahoot** - XLSX layout sutable for kayhoot.com import (most sets are to large)
+- **Quizziz** - XLSX layout sutable for quizziz.com import with photos
+- **Rds** - Raw r data objects for use if programming
 
 ## Conclusions
 This horizontal bar chart shows how often each answer option was correct. Option B was right most frequently (807 times), followed closely by C (771), A (738), and D (720)—all within roughly the same range—while option E lags far behind at just 59 selections. This sharp drop‐off for E suggests that very few questions offered a fifth choice. The relative parity among A–D indicates there isn’t a strong overall bias toward any single one of those four positions, but the near‐absence of E reveals an uneven distribution of answer slots in the quiz design.
