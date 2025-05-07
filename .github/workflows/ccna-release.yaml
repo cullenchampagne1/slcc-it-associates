@@ -8,6 +8,7 @@ on:
       - 'R/**'
       - 'formats/**'
       - 'ccna-library-parse.R'
+  workflow_dispatch:
 
 jobs:
   build-and-release:
@@ -25,7 +26,7 @@ jobs:
 
       - name: Install R packages
         run: |
-          Rscript -e 'install.packages(c("rvest", "dplyr", "fs", "zip", "writexl", "stringr", "httr", "jsonlite", "readr", "purrr"))'
+          Rscript -e 'install.packages(c("rvest", "dplyr", "fs", "zip", "writexl", "stringr", "httr", "jsonlite", "readr", "purrr", "digest"))'
 
       - name: Run parsing script
         run: |
