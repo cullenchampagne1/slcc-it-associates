@@ -66,13 +66,13 @@ for (exam_link in group_exam_links) {
     if (any(is.na(modules))) file_name <- paste0("ccna-semester-", semester, "-final")
     else file_name <- paste0("ccna-semester-", semester, "-modules-", modules[1], "-", modules[2])
     # Parse the questions from the exam link
-    question_data <- get_formated_questions(exam_link, file.path(question_data_dir, paste0(file_name, "_raw.rds")))
+    question_data <- get_formated_questions(exam_link, file.path(question_data_dir, paste0(file_name, ".rds")))
     # Save the formatted questions to a quizzz file
-    save_formated_quizzz(question_data$questions, file.path(quizizz_data_dir, paste0(file_name, "_raw.rds")))
+    save_formated_quizzz(question_data$questions, file.path(quizizz_data_dir, paste0(file_name, ".xlsx")))
 }
 
 # Create zip files for the question and quizizz data directories
-question_data_zip <- file.path(final_zip_dir, "ccna-semester-1-3_raw.zip")
+question_data_zip <- file.path(final_zip_dir, "ccna-semester-1-3_rds.zip")
 quizizz_data_zip <- file.path(final_zip_dir, "ccna-semester-1-3_quizizz.zip")
 # Zip all files in the question and quizizz data directories
 zip::zip(zipfile = question_data_zip, files = dir(question_data_dir, full.names = TRUE), mode = "cherry-pick")
