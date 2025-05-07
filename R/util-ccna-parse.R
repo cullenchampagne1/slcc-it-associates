@@ -21,10 +21,10 @@ source("R/util-data-download.R")
 
 library(rvest, quietly = TRUE, warn.conflicts = FALSE) # Filter through and parse html objects
 library(dplyr, quietly = TRUE, warn.conflicts = FALSE) # Mutation / Management of dataframes
-library(stringr, quietly = TRUE, warn.conflicts = FALSE)
-library(xml2, quietly = TRUE, warn.conflicts = FALSE)
-library(purrr, quietly = TRUE, warn.conflicts = FALSE)
-library(jsonlite, quietly = TRUE, warn.conflicts = FALSE)
+library(stringr, quietly = TRUE, warn.conflicts = FALSE) # String manipulation
+library(xml2, quietly = TRUE, warn.conflicts = FALSE) # XML parsing tools
+library(purrr, quietly = TRUE, warn.conflicts = FALSE) # Functional programming tools
+library(jsonlite, quietly = TRUE, warn.conflicts = FALSE) # JSON parsing tools
 
 #' Takes in a url to a webpage containing questions and parses them into a structured format
 #' sutable for use with an formats created.
