@@ -20,15 +20,14 @@
 source("R/util-data-download.R")
 # Core parsing logic for each webpage
 source("R/util-ccna-parse.R")
-# Quizzzz format saving function
-source("R/formats/questions-quizizz-format.R")
-# quizizz format saving function
-source("R/formats/questions-quizlet-format.R")
+# Format saving functions
+source("R/util-data-formats.R")
 
 library(rvest, quietly = TRUE, warn.conflicts = FALSE) # Filter through and parse html objects
 library(dplyr, quietly = TRUE, warn.conflicts = FALSE) # Mutation / Management of dataframes
 library(fs, quietly = TRUE, warn.conflicts = FALSE) # Working with file paths
 library(zip, quietly = TRUE, warn.conflicts = FALSE) # Zip file creation
+library(purrr, quietly = TRUE, warn.conflicts = FALSE) # Functional programming tools
 
 # Command line argument for final zip directory
 args <- commandArgs(trailingOnly = TRUE)
@@ -39,29 +38,34 @@ group_exam_listings_content <- download_fromHTML("https://itexamanswers.net/ccna
 # Get all link elements from the listings page
 content_links <- group_exam_listings_content %>% rvest::html_elements("a") %>% rvest::html_attr("href")
 # Filter links that contain "modules" indicating they are exam content pages
-group_exam_links <- content_links[grepl("modules", content_links, ignore.case = TRUE) &
-                                  !grepl("test-online", content_links, ignore.case = TRUE)]
+group_exam_links <- content_links[
+    (grepl("modules", content_links, ignore.case = TRUE) |
+    grepl("final-exam", content_links, ignore.case = TRUE)) &
+    !grepl("test-online", content_links, ignore.case = TRUE)
+]
 # Standardiz relative URLs to absolute URLs
 group_exam_links <- ifelse(grepl("^http", group_exam_links), group_exam_links, paste0("https://itexamanswers.net", group_exam_links))
 # Filter out any duplicate links
 group_exam_links <- unique(group_exam_links)
-# Add hardcoded final exam links
-final_exam_links <- c(
-    "https://itexamanswers.net/ccna-1-v7-0-final-exam-answers-full-introduction-to-networks.html",
-    "https://itexamanswers.net/ccna-2-v7-0-final-exam-answers-full-switching-routing-and-wireless-essentials.html",
-    "https://itexamanswers.net/ccna-3-v7-0-final-exam-answers-full-enterprise-networking-security-and-automation.html"
-)
-group_exam_links <- append(group_exam_links, final_exam_links)
+# remove all spaces from each URL
+group_exam_links <- gsub("\\s+", "", group_exam_links)
 
-# Create a temporary directory for saving quizizz data
-quizizz_data_dir <- tempfile("quizizz_data_dir")
-dir_create(quizizz_data_dir)
-# Create temporary directories for storing question data
-question_data_dir <- tempfile("question_data_dir")
-dir_create(question_data_dir)
-# Create temporary directories for storing quizlet data
-quizlet_data_dir <- tempfile("quizlet_data_dir")
-dir_create(quizlet_data_dir)
+# Define the formats and their save functions
+formats <- list(
+    rds = list(ext = ".rds", save = function(data, path) saveRDS(data, path)),
+    quizizz = list(ext = ".xlsx", save = save_formated_quizizz),
+    quizlet = list(ext = ".txt", save = save_formated_quizlet),
+    csv = list(ext = ".csv", save = save_formatted_csv)
+)
+# Create temporary directories for each format
+temp_dirs <- purrr::map(names(formats), function(fmt) {
+    # Create a temporary directory for the format
+    dir <- tempfile(paste0(fmt, "_data_dir_"))
+    fs::dir_create(dir)
+    dir # Return the directory path
+})
+# Swap names to match the formats for later use
+names(temp_dirs) <- names(formats)
 
 # Loop through each exam link and parse the questions
 for (exam_link in group_exam_links) {
@@ -72,17 +76,20 @@ for (exam_link in group_exam_links) {
     if (any(is.na(modules))) file_name <- paste0("ccna-semester-", semester, "-final")
     else file_name <- paste0("ccna-semester-", semester, "-modules-", modules[1], "-", modules[2])
     # Parse the questions from the exam link
-    question_data <- get_formated_questions(exam_link, file.path(question_data_dir, paste0(file_name, ".rds")))
-    # Save the formatted questions to a quizzz file
-    save_formated_quizizz(question_data$questions, file.path(quizizz_data_dir, paste0(file_name, ".xlsx")))
-    save_formated_quizlet(question_data$questions, file.path(quizlet_data_dir, paste0(file_name, ".txt")))
+    question_data <- get_formated_questions(exam_link, NULL)
+    # Apply the save functions to each format listed
+    purrr::walk2(formats, temp_dirs, ~ {
+        out_path <- file.path(.y, paste0(file_name, .x$ext))
+        .x$save(question_data$questions, out_path)
+    })
 }
 
-# Create zip files for the question irectories
-question_data_zip <- file.path(final_zip_dir, "ccna-semester-1-3_rds.zip")
-quizizz_data_zip <- file.path(final_zip_dir, "ccna-semester-1-3_quizizz.zip")
-quizlet_data_zip <- file.path(final_zip_dir, "ccna-semester-1-3_quizlet.zip")
-# Zip all files in the question directories
-zip::zip(zipfile = question_data_zip, files = dir(question_data_dir, full.names = TRUE), mode = "cherry-pick")
-zip::zip(zipfile = quizizz_data_zip, files = dir(quizizz_data_dir, full.names = TRUE), mode = "cherry-pick")
-zip::zip(zipfile = quizlet_data_zip, files = dir(quizlet_data_dir, full.names = TRUE), mode = "cherry-pick")
+# Create the zip conatiners for all formats
+purrr::imap(temp_dirs, ~ {
+    # Generate the zip file path
+    zip_path <- file.path(final_zip_dir, paste0("ccna-semester-1-3-", .y, ".zip"))
+    # Get all files in fortmats diretory
+    files <- dir(.x, full.names = TRUE)
+    # Zip contents of the directory
+    zip(zipfile = zip_path, files = files, mode = "cherry-pick")
+})
