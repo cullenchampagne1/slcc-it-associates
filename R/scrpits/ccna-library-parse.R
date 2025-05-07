@@ -21,13 +21,16 @@ source("R/util-data-download.R")
 # Core parsing logic for each webpage
 source("R/util-ccna-parse.R")
 # Quizzzz format saving function
-source("R/formats/question-quizizz-format.R")
+source("R/formats/questions-quizizz-format.R")
+# quizizz format saving function
+source("R/formats/questions-quizlet-format.R")
 
 library(rvest, quietly = TRUE, warn.conflicts = FALSE) # Filter through and parse html objects
 library(dplyr, quietly = TRUE, warn.conflicts = FALSE) # Mutation / Management of dataframes
-library(fs, quietly = TRUE, warn.conflicts = FALSE)
-library(zip, quietly = TRUE, warn.conflicts = FALSE)
+library(fs, quietly = TRUE, warn.conflicts = FALSE) # Working with file paths
+library(zip, quietly = TRUE, warn.conflicts = FALSE) # Zip file creation
 
+# Command line argument for final zip directory
 args <- commandArgs(trailingOnly = TRUE)
 final_zip_dir <- if (length(args) >= 1) args[1] else "zips"
 
@@ -56,6 +59,9 @@ dir_create(quizizz_data_dir)
 # Create temporary directories for storing question data
 question_data_dir <- tempfile("question_data_dir")
 dir_create(question_data_dir)
+# Create temporary directories for storing quizlet data
+quizlet_data_dir <- tempfile("quizlet_data_dir")
+dir_create(quizlet_data_dir)
 
 # Loop through each exam link and parse the questions
 for (exam_link in group_exam_links) {
@@ -68,12 +74,15 @@ for (exam_link in group_exam_links) {
     # Parse the questions from the exam link
     question_data <- get_formated_questions(exam_link, file.path(question_data_dir, paste0(file_name, ".rds")))
     # Save the formatted questions to a quizzz file
-    save_formated_quizzz(question_data$questions, file.path(quizizz_data_dir, paste0(file_name, ".xlsx")))
+    save_formated_quizizz(question_data$questions, file.path(quizizz_data_dir, paste0(file_name, ".xlsx")))
+    save_formated_quizlet(question_data$questions, file.path(quizlet_data_dir, paste0(file_name, ".txt")))
 }
 
-# Create zip files for the question and quizizz data directories
+# Create zip files for the question irectories
 question_data_zip <- file.path(final_zip_dir, "ccna-semester-1-3_rds.zip")
 quizizz_data_zip <- file.path(final_zip_dir, "ccna-semester-1-3_quizizz.zip")
-# Zip all files in the question and quizizz data directories
+quizlet_data_zip <- file.path(final_zip_dir, "ccna-semester-1-3_quizlet.zip")
+# Zip all files in the question directories
 zip::zip(zipfile = question_data_zip, files = dir(question_data_dir, full.names = TRUE), mode = "cherry-pick")
 zip::zip(zipfile = quizizz_data_zip, files = dir(quizizz_data_dir, full.names = TRUE), mode = "cherry-pick")
+zip::zip(zipfile = quizlet_data_zip, files = dir(quizlet_data_dir, full.names = TRUE), mode = "cherry-pick")
