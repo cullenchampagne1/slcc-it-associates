@@ -144,7 +144,7 @@ get_formated_questions <- function(url, file_name) {
     # Add title to the final questions tibble
     questions_final$title <- exam_title
     # Save the final questions tibble to a JSON file
-    cat(paste0("[", exam_title, "](", url, ")\n"))
+    cat(paste0("- [", exam_title, "](", url, ")\n"))
     saveRDS(questions_final, file_name)
     questions_final # Return the final questions tibble
 }
