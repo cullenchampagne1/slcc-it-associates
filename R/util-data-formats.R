@@ -92,21 +92,25 @@ save_formated_quizizz <- function(questions, file_name) {
         else  as.integer(unlist(correct_index)) + 1
         # Determine question type
         question_type <- if (length(correct_indices) == 1) "Multiple Choice" else "Checkbox"
-        # Build list of correct options
-        correct_opts <- options[correct_indices]
         
-        all_included <- unique(c(correct_indices, seq_along(options)))
-        fill_indices <- setdiff(seq_along(options), correct_indices)
-        filler_opts <- options[fill_indices]
+        # start with slots 1:5 (or fewer if <5 options)
+        slots <- seq_len(min(length(options), 5))
+        # for any correct answer beyond slot 5, pop the largest non-correct slot and append that correct
+        for (ci in correct_indices[ correct_indices > max(slots) ]) {
+            # which slots are *not* already correct?
+            replaceable <- setdiff(slots, intersect(slots, correct_indices))
+            if (length(replaceable)==0) break
+            # pick the highest (so you “replace 5 if it’s wrong, then 4, …”)
+            to_remove <- max(replaceable)
+            slots <- slots[slots != to_remove]
+            slots <- c(slots, ci) 
+        }
+        # build answer columns in that slot order
+        padded_opts <- c(options[slots], rep("", 5))[1:5]
+        # recompute where your correct answers ended up
+        new_correct_positions <- which(slots %in% correct_indices)
+        correct_answer_str <- paste(new_correct_positions, collapse = ",")
 
-        final_opts <- c(correct_opts, filler_opts)
-        final_opts <- unique(final_opts)[1:min(length(unique(final_opts)), 5)]
-
-        # Map back updated correct indices in this reduced set
-        new_correct_indices <- which(final_opts %in% correct_opts)
-        correct_answer_str <- paste(new_correct_indices, collapse = ",")
-
-        padded_opts <- c(final_opts, rep("", 5))[1:5]
         # Use first image if present
         image_link <- if (length(images) > 0 && nzchar(images[[1]])) images[[1]] else ""
 
@@ -124,6 +128,7 @@ save_formated_quizizz <- function(questions, file_name) {
             `Answer explanation` = explanation %||% "",
         )
     })
+    quiz_data <<- rbind(quiz_data, quizizz_rows)
     # Save the formatted quizzz data to a CSV file
     writexl::write_xlsx(quizizz_rows, file_name)
     # Return the formatted quizizz rows
