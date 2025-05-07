@@ -7,6 +7,8 @@ on:
       - 'R/**'
       - 'formats/**'
       - 'ccna-library-parse.R'
+  schedule:
+    - cron: '0 0 * * 1'
   workflow_dispatch:
 
 jobs:
@@ -56,7 +58,7 @@ jobs:
             tag_links=$(grep -i "$tag" console_output.log || echo "No URLs logged for $tag")
 
             # Build release note line by line
-            echo "This release provides **structured CCNA exam data** covering all modules from CCNA v7.0 curriculum, available in multiple convenient formats for study and programmatic use.  For full details on each format and how to use them, see the [Formats Guide](./readme.md#available-formats). `Last updated: $(date -u +'%Y-%m-%d')`" > tmp_release_note.txt
+            echo "This release provides **structured CCNA exam data** covering all modules from CCNA v7.0 curriculum, available in multiple convenient formats for study and programmatic use.  For full details on each format and how to use them, see the [Formats Guide](./readme.md#available-formats). \`Last updated: $(date -u +'%Y-%m-%d')\`" > tmp_release_note.txt
             echo ""                                                      >> tmp_release_note.txt
             echo ""**Covered Modules:**" >> tmp_release_note.txt
             echo ""                                                      >> tmp_release_note.txt
