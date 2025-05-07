@@ -50,13 +50,12 @@ jobs:
             tag_links=$(grep -i "$tag" console_output.log || echo "No URLs logged for $tag")
 
             # Compose release note
-            release_note=$(cat <<EOF
-            This release contains structured CCNA exam data. Each exam is processed and packaged into multiple formats, for full details on each format and how to use them, see the [Formats Guide](./readme.m#avalaible-formats)
+            cat > tmp_release_note.txt <<EOF
+            This release contains structured CCNA exam data. Each exam is processed and packaged into multiple formats. For full details on each format and how to use them, see the [Formats Guide](./readme.md#available-formats)
             
             included urls:
             $tag_links
             EOF
-            )
 
             echo "$release_note" > tmp_release_note.txt
 
