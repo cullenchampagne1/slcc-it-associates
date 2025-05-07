@@ -70,11 +70,21 @@ names(temp_dirs) <- names(formats)
 # Loop through each exam link and parse the questions
 for (exam_link in group_exam_links) {
     # Genarte a file name based on the URL
-    name_base <- gsub(".html$", "", basename(exam_link))
-    semester <- stringr::str_match(name_base, "ccna-(\\d)")[,2]
-    modules <- stringr::str_match(name_base, "modules-(\\d+)-(\\d+)")[, 2:3]
-    if (any(is.na(modules))) file_name <- paste0("ccna-semester-", semester, "-final")
-    else file_name <- paste0("ccna-semester-", semester, "-modules-", modules[1], "-", modules[2])
+    name_base <- sub("\\.html$", "", basename(exam_link))
+    # extract the semester number (the “1” in “ccna-1”)
+    semester <- str_match(name_base, "^ccna-(\\d)")[,2]
+    if (str_detect(name_base, regex("modules-\\d+-\\d+", ignore_case = TRUE))) {
+        # it’s a modules page → pull out the two module numbers
+        modules <- str_match(name_base, "modules-(\\d+)-(\\d+)")[,2:3]
+        file_name <- sprintf("ccna-semester-%s-modules-%s-%s",
+                            semester, modules[1], modules[2])
+    } else {
+        # everything else is a “final” of some sort (including practice finals)
+        # strip off the leading ccna-<n>-vX.Y- so we can append the rest
+        suffix <- sub("^ccna-\\d+-v[\\d\\.]+-", "",
+                        name_base, ignore.case = TRUE)
+        file_name <- sprintf("ccna-semester-%s-%s", semester, suffix)
+    }
     # Parse the questions from the exam link
     question_data <- get_formated_questions(exam_link, NULL)
     # Apply the save functions to each format listed
@@ -85,11 +95,11 @@ for (exam_link in group_exam_links) {
 }
 
 # Create the zip conatiners for all formats
-purrr::imap(temp_dirs, ~ {
+invisible(purrr::imap(temp_dirs, ~ {
     # Generate the zip file path
     zip_path <- file.path(final_zip_dir, paste0("ccna-semester-1-3-", .y, ".zip"))
     # Get all files in fortmats diretory
     files <- dir(.x, full.names = TRUE)
     # Zip contents of the directory
     zip(zipfile = zip_path, files = files, mode = "cherry-pick")
-})
+}))
