@@ -2,7 +2,7 @@ name: Run CCNA Parse and Update Releases
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
     paths:
       - 'R/**'
       - 'formats/**'
@@ -13,12 +13,9 @@ jobs:
   build-and-release:
     runs-on: ubuntu-latest
     permissions:
-      contents: write        # create / edit releases
+      contents: write
 
     steps:
-      # -----------------------------------------------------
-      # 1. checkout + R setup
-      # -----------------------------------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -26,59 +23,58 @@ jobs:
         uses: r-lib/actions/setup-r@v2
 
       - name: Install R packages
+        shell: bash
         run: |
           Rscript -e 'install.packages(c(
             "rvest","dplyr","fs","zip","writexl","stringr",
             "httr","jsonlite","readr","purrr","digest"
           ))'
 
-      # -----------------------------------------------------
-      # 2. run parser – capture console output
-      # -----------------------------------------------------
       - name: Run parsing script and capture output
+        shell: bash
         run: |
           mkdir -p output/zips
-          Rscript R/scrpits/ccna-library-parse.R output/zips \
-            | tee console_output.log
+          Rscript R/scrpits/ccna-library-parse.R output/zips | tee console_output.log
 
-      # -----------------------------------------------------
-      # 3. create / update releases + upload assets
-      # -----------------------------------------------------
       - name: Create or update releases and upload files
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
         run: |
-          # tags = prefix before first “‑” of every zip
-          tags=$(find output/zips -type f -name '*.zip' -printf '%f\n' \
-                   | cut -d'-' -f1 | sort -u)
+          set -euo pipefail
+
+          # Determine unique tags (prefix before first dash)
+          tags=$(ls output/zips/*.zip | xargs -n1 basename | cut -d'-' -f1 | sort -u)
 
           for tag in $tags; do
-            echo "▶ processing tag: $tag"
+            echo "▶ Processing tag: $tag"
 
-            files=$(find output/zips -type f -name "${tag}-*.zip")
+            # Find all zip files for this tag
+            files=$(ls output/zips/${tag}-*.zip)
+
+            # Gather URLs printed by the R script for this tag
             tag_links=$(grep -i "$tag" console_output.log || echo "No URLs logged for $tag")
 
-            # ---------- compose release note ----------
-            cat > tmp_release_note.txt <<'EOF'
-This release contains structured CCNA exam data. Each exam is processed and packaged into multiple formats. For full details on each format and how to use them, see the [Formats Guide](./readme.md#available-formats).
+            # Build release note line by line
+            echo "This release contains structured CCNA exam data available in multiple formats." > tmp_release_note.txt
+            echo ""                                                      >> tmp_release_note.txt
+            echo "For full details on each format and how to use them, see the [Formats Guide](./readme.md#available-formats)." >> tmp_release_note.txt
+            echo ""                                                      >> tmp_release_note.txt
+            echo "included urls:"                                        >> tmp_release_note.txt
+            echo "$tag_links"                                            >> tmp_release_note.txt
 
-included urls:
-EOF
-            # append dynamic list of URLs
-            echo "$tag_links" >> tmp_release_note.txt
-
-            # ---------- create or update release ----------
+            # Create or update the GitHub Release
             if gh release view "$tag" >/dev/null 2>&1; then
-              echo "↻ updating release $tag"
+              echo "↻ Updating release $tag"
               gh release edit "$tag" --notes-file tmp_release_note.txt
             else
-              echo "➕ creating release $tag"
+              echo "➕ Creating release $tag"
               gh release create "$tag" --title "$tag" --notes-file tmp_release_note.txt
             fi
 
-            # ---------- upload zip assets ----------
+            # Upload each zip as a release asset
             for f in $files; do
-              echo "  📦 $(basename "$f")"
+              echo "  📦 Uploading $(basename "$f")"
               gh release upload "$tag" "$f" --clobber
             done
           done
