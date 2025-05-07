@@ -25,7 +25,7 @@ jobs:
 
       - name: Install R packages
         run: |
-          Rscript -e 'install.packages(c("rvest", "dplyr", "fs", "zip", "writexl", "stringr", "httr", "jsonlite", "readr"))'
+          Rscript -e 'install.packages(c("rvest", "dplyr", "fs", "zip", "writexl", "stringr", "httr", "jsonlite", "readr", "purrr"))'
 
       - name: Run parsing script
         run: |
