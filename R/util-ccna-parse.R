@@ -30,13 +30,9 @@ library(jsonlite, quietly = TRUE, warn.conflicts = FALSE) # JSON parsing tools
 #' sutable for use with an formats created.
 #'
 #' @param url url to hosted webpage containing questions to be parsed
+#' @param file_name Optional RDS filename to save the output.
 #'
-#' @return A tibble containing the following information:
-#'  parsed questions
-#'  options
-#'  correct answers
-#'  planations
-#'  metadata
+#' @return A tibble with columns: question, images, options, correct_index, explanation, title.
 #'
 get_formated_questions <- function(url, file_name) {
     # Download the HTML content from the URL (or cache)

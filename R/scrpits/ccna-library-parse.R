@@ -55,6 +55,8 @@ formats <- list(
     rds = list(ext = ".rds", save = function(data, path) saveRDS(data, path)),
     quizizz = list(ext = ".xlsx", save = save_formated_quizizz),
     quizlet = list(ext = ".txt", save = save_formated_quizlet),
+    kahoot = list(ext = ".xlsx", save = save_formatted_kahoot),
+    googleforms = list(ext = ".xlsx", save = save_formatted_googleforms),
     csv = list(ext = ".csv", save = save_formatted_csv)
 )
 # Create temporary directories for each format
