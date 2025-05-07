@@ -58,7 +58,7 @@ jobs:
             # Build release note line by line
             echo "This release provides **structured CCNA exam data** covering all modules from CCNA v7.0 curriculum, available in multiple convenient formats for study and programmatic use.  For full details on each format and how to use them, see the [Formats Guide](./readme.md#available-formats)." > tmp_release_note.txt
             echo ""                                                      >> tmp_release_note.txt
-            echo ""**📚 Covered Modules**" >> tmp_release_note.txt
+            echo "**📚 Covered Modules**" >> tmp_release_note.txt
             echo ""                                                      >> tmp_release_note.txt
             echo "$tag_links"                                            >> tmp_release_note.txt
 
