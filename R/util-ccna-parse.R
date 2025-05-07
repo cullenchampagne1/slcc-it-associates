@@ -90,9 +90,6 @@ get_formated_questions <- function(url, file_name) {
             bad <- c("ccna", "explain:", "answer:", "thanks", "reply", "valid", "explanation:")
             # Accept even very short tokens (e.g. STP, VTP, DTP) as long as they are
             # 2–4 uppercase letters or longer words. Reject only if it matches junk.
-            too_short_and_not_acronym <- nchar(opt) < 2 ||
-                (nchar(opt) < 3 && !str_detect(opt, "^[A-Z]{2,4}$"))
-            if (too_short_and_not_acronym) return(FALSE)
             !any(map_lgl(bad, ~ str_starts(tolower(opt), .x)))
         }
         #' Helper function to check if a node has red style, meaning it is a

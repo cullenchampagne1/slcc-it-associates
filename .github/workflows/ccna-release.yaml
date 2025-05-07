@@ -65,7 +65,7 @@ jobs:
             echo "Last updated: $(date -u +'%Y-%m-%d %H:%M UTC')"                                                  >> tmp_release_note.txt
             echo '```'                                                                                    >> tmp_release_note.txt
             echo ""                                                                                         >> tmp_release_note.txt
-            echo "Covered Modules: **"                                                                    >> tmp_release_note.txt
+            echo "**Covered Modules: **"                                                                    >> tmp_release_note.txt
             echo ""                                                                                         >> tmp_release_note.txt
             echo "$tag_links"                                                                               >> tmp_release_note.txt
 
