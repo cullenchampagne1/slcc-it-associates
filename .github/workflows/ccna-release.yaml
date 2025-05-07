@@ -39,7 +39,7 @@ jobs:
         run: |
           for f in output/zips/*; do
             name=$(basename "$f")
-            tag=$(echo "$name" | cut -d'_' -f1)
+            tag=$(echo "$name" | cut -d'-' -f1)
             
             # Check if release exists
             if ! gh release view "$tag" &>/dev/null; then
