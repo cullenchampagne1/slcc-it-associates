@@ -25,7 +25,7 @@ data <- read.csv("data/raw/canvas-answers.csv", header = TRUE)
 
 my_theme <- theme_minimal(base_size = 10) +
   theme(
-    plot.title         = element_text(face = "bold", size = 11, margin = margin(b = 2)),
+    plot.title         = element_text(face = "bold", size = 11, margin = margin(b = 2, t = 4)),
     plot.margin        = unit(c(1,1,1,1), "mm"),
     panel.background   = element_rect(fill = "#f8f8f8", color = NA),
     plot.background    = element_rect(fill = "#f8f8f8", color = NA),
@@ -45,7 +45,7 @@ counts <- data_long %>% count(ans_letter, name = "Count")
 p_a <- ggplot(counts, aes(x = Count, y = reorder(ans_letter, Count))) +
   geom_col(fill = "#333333", width = 0.3) +
   geom_text(aes(label = Count), hjust = -0.1, size = 2.8, color = "black") +
-  labs(title = "How Often Each Option Was Chosen", x = "Times Chosen", y = "Option") +
+  labs(title = "Answer Frequency", x = "Times Chosen", y = "Option") +
   scale_x_continuous(expand = expansion(c(0,0.1))) +
   my_theme
 ggsave("output/frequency.png", p_a, width=12, height=3.5, dpi=300)
