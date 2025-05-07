@@ -18,12 +18,19 @@
 
 library(rvest, quietly = TRUE, warn.conflicts = FALSE) # Filter through and parse html objects
 library(dplyr, quietly = TRUE, warn.conflicts = FALSE) # Mutation / Management of dataframes
-library(stringr, quietly = TRUE, warn.conflicts = FALSE)
-library(purrr, quietly = TRUE, warn.conflicts = FALSE)
-library(writexl, quietly = TRUE, warn.conflicts = FALSE)
+library(stringr, quietly = TRUE, warn.conflicts = FALSE) # String manipulation
+library(purrr, quietly = TRUE, warn.conflicts = FALSE) # Functional programming tools
+library(writexl, quietly = TRUE, warn.conflicts = FALSE) # Excel file writing
 
-save_formated_quizzz <- function(questions, file_name) {
-    quizzz_rows <- pmap_dfr(questions, function(question, images, options, correct_index, explanation) {
+#' Takes in a list of questions and formats them into a structure suitable for Quizizz import.
+#'
+#' @param questions object containing question data
+#' @param file_name name of the file to save the data to
+#'
+#' @return A tibble containing the following information:
+#'
+save_formated_quizizz <- function(questions, file_name) {
+    quizizz_rows <- pmap_dfr(questions, function(question, images, options, correct_index, explanation) {
         # Parse correct indices and shift to 1-based
         correct_indices <- if (is.null(correct_index)) integer(0)
         else if (is.numeric(correct_index)) correct_index + 1
@@ -63,5 +70,5 @@ save_formated_quizzz <- function(questions, file_name) {
         )
     })
     # Save the formatted quizzz data to a CSV file
-    writexl::write_xlsx(quizzz_rows, file_name)
+    writexl::write_xlsx(quizizz_rows, file_name)
 }
