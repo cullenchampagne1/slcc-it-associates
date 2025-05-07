@@ -28,23 +28,32 @@ jobs:
         run: |
           Rscript -e 'install.packages(c("rvest", "dplyr", "fs", "zip", "writexl", "stringr", "httr", "jsonlite", "readr", "purrr", "digest"))'
 
-      - name: Run parsing script
+      - name: Run parsing script and capture output
         run: |
           mkdir -p output/zips
-          Rscript R/scrpits/ccna-library-parse.R output/zips
+          Rscript R/scrpits/ccna-library-parse.R output/zips | tee console_output.log
 
       - name: Upload files to GitHub Release(s)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Add hardcoded note prefix here
+          hardcoded_note="This release contains CCNA exam question data, formatted and exported for multiple platforms.\n\n Uploaded files include:\n\n"
+
           for f in output/zips/*; do
             name=$(basename "$f")
             tag=$(echo "$name" | cut -d'-' -f1)
-            
-            # Check if release exists
+
+            # Extract relevant lines from the output (matching tag)
+            tag_lines=$(grep "$tag" console_output.log || echo "Auto-generated release for $tag")
+
+            # Combine hardcoded + extracted description
+            note="$hardcoded_note$tag_lines"
+
             if ! gh release view "$tag" &>/dev/null; then
               echo "Creating release $tag"
-              gh release create "$tag" -t "$tag" -n "Auto-generated release for $tag"
+              echo -e "$note" > tmp_release_note.txt
+              gh release create "$tag" -t "$tag" -F tmp_release_note.txt
             fi
 
             echo "Uploading $name to release $tag"
