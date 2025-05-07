@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: write  # Needed for release creation
+      contents: write
 
     steps:
       - name: Checkout repository
@@ -33,29 +33,45 @@ jobs:
           mkdir -p output/zips
           Rscript R/scrpits/ccna-library-parse.R output/zips | tee console_output.log
 
-      - name: Upload files to GitHub Release(s)
+      - name: Create or update releases and upload files
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Add hardcoded note prefix here
-          hardcoded_note="This release contains CCNA exam question data, formatted and exported for multiple platforms.\n\n Uploaded files include:\n\n"
+          # Generate list of unique tags from filenames
+          tags=$(find output/zips -type f -name "*.zip" | sed 's|.*/||' | cut -d'-' -f1 | sort -u)
 
-          for f in output/zips/*; do
-            name=$(basename "$f")
-            tag=$(echo "$name" | cut -d'-' -f1)
+          for tag in $tags; do
+            echo "Processing tag: $tag"
 
-            # Extract relevant lines from the output (matching tag)
-            tag_lines=$(grep "$tag" console_output.log || echo "Auto-generated release for $tag")
+            # Collect files for this tag
+            files=$(find output/zips -type f -name "${tag}-*.zip")
 
-            # Combine hardcoded + extracted description
-            note="$hardcoded_note$tag_lines"
+            # Build dynamic part: included URLs from log
+            tag_links=$(grep -i "$tag" console_output.log || echo "No URLs logged for $tag")
 
-            if ! gh release view "$tag" &>/dev/null; then
+            # Compose release note
+            release_note=$(cat <<EOF
+            This release contains structured CCNA exam data. Each exam is processed and packaged into multiple formats, for full details on each format and how to use them, see the [Formats Guide](./readme.m#avalaible-formats)
+            
+            included urls:
+            $tag_links
+            EOF
+            )
+
+            echo "$release_note" > tmp_release_note.txt
+
+            # Create or update the release
+            if gh release view "$tag" &>/dev/null; then
+              echo "Updating release $tag"
+              gh release edit "$tag" -F tmp_release_note.txt
+            else
               echo "Creating release $tag"
-              echo -e "$note" > tmp_release_note.txt
               gh release create "$tag" -t "$tag" -F tmp_release_note.txt
             fi
 
-            echo "Uploading $name to release $tag"
-            gh release upload "$tag" "$f" --clobber
+            # Upload all files for this tag
+            for f in $files; do
+              echo "Uploading $(basename "$f") to release $tag"
+              gh release upload "$tag" "$f" --clobber
+            done
           done
