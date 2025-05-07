@@ -1,5 +1,5 @@
 
-## SLCC IT Assosiates Test Bank
+## SLCC IT Associate Degree Test Bank
 
 This repository contains the a canvas/ccna export test bank for the IT Associate’s Degree program at South Louisiana Community College. It includes quiz questions, answer choices, and multiple import formats to integration with various learning platforms.  In addition, we provide data visualizations to help you understand answer distributions, question lengths, and other quiz metrics.
 
