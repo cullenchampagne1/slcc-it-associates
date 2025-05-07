@@ -21,7 +21,7 @@ requireNamespace("httr", quietly = TRUE)
 requireNamespace("jsonlite", quietly = TRUE)
 
 #' Takes in url to remote json file and check if file has already been
-#' downloaded into cache, if cache contains file then returns cache to avoid 
+#' downloaded into cache, if cache contains file then returns cache to avoid
 #' repeated api calls
 #' 
 #' @param url A url to the remote json data
