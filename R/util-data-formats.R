@@ -128,7 +128,6 @@ save_formated_quizizz <- function(questions, file_name) {
             `Answer explanation` = explanation %||% "",
         )
     })
-    quiz_data <<- rbind(quiz_data, quizizz_rows)
     # Save the formatted quizzz data to a CSV file
     writexl::write_xlsx(quizizz_rows, file_name)
     # Return the formatted quizizz rows
