@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: write
+      contents: write  # Required for release upload
 
     steps:
       - name: Checkout repository
@@ -37,38 +37,33 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Generate list of unique tags from filenames
           tags=$(find output/zips -type f -name "*.zip" | sed 's|.*/||' | cut -d'-' -f1 | sort -u)
 
           for tag in $tags; do
             echo "Processing tag: $tag"
-
-            # Collect files for this tag
             files=$(find output/zips -type f -name "${tag}-*.zip")
-
-            # Build dynamic part: included URLs from log
             tag_links=$(grep -i "$tag" console_output.log || echo "No URLs logged for $tag")
 
-            # Compose release note
-            cat > tmp_release_note.txt <<EOF
-            This release contains structured CCNA exam data. Each exam is processed and packaged into multiple formats. For full details on each format and how to use them, see the [Formats Guide](./readme.md#available-formats)
-            
-            included urls:
-            $tag_links
-            EOF
+            # Write hardcoded header
+            cat <<'EOF' > tmp_release_note.txt
+This release contains structured CCNA exam data. Each exam is processed and packaged into multiple formats. For full details on each format and how to use them, see the [Formats Guide](./readme.md#available-formats)
 
-            echo "$release_note" > tmp_release_note.txt
+included urls:
+EOF
 
-            # Create or update the release
+            # Append dynamic URL list
+            echo "$tag_links" >> tmp_release_note.txt
+
+            # Create or update release
             if gh release view "$tag" &>/dev/null; then
               echo "Updating release $tag"
-              gh release edit "$tag" -F tmp_release_note.txt
+              gh release edit "$tag" --notes-file tmp_release_note.txt
             else
               echo "Creating release $tag"
-              gh release create "$tag" -t "$tag" -F tmp_release_note.txt
+              gh release create "$tag" -t "$tag" --notes-file tmp_release_note.txt
             fi
 
-            # Upload all files for this tag
+            # Upload all files for this release
             for f in $files; do
               echo "Uploading $(basename "$f") to release $tag"
               gh release upload "$tag" "$f" --clobber
