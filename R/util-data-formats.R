@@ -22,12 +22,69 @@ library(stringr, quietly = TRUE, warn.conflicts = FALSE) # String manipulation
 library(purrr, quietly = TRUE, warn.conflicts = FALSE) # Functional programming tools
 library(writexl, quietly = TRUE, warn.conflicts = FALSE) # Excel file writing
 
+#' Takes in a list of questions and formats them into a structure suitable for Quizlet import.
+#'
+#' @param questions A tibble or data frame with list-columns:
+#'   - question  (character)
+#'   - images    (list, ignored here)
+#'   - options   (list of character vectors)
+#'   - correct_index (numeric or list of indices)
+#'   - explanation (character, ignored here)
+#' @param file_name Path to the CSV file to write
+#'
+save_formated_quizlet <- function(questions, file_name) {
+    quizlet_rows <- pmap_chr(questions, function(question, images, options, correct_index, explanation) {
+        # Convert to 1 base indices if avalaible 
+        correct_indices <- if (is.null(correct_index)) integer(0)
+        else if (is.numeric(correct_index)) correct_index + 1
+        else as.integer(unlist(correct_index)) + 1
+        # Get correct answers by index(s)
+        correct_answers <- options[correct_indices]
+        answer_str <- paste(correct_answers, collapse = ", ")
+        # Construct card line: question | answer(s)
+        paste0(question, "|", answer_str)
+    })
+    # Write all lines to the file provided
+    writeLines(as.character(quizlet_rows), con = file_name)
+}
+
+#' Save questions and their correct answers as a two-column CSV
+#'
+#' @param questions A tibble or data frame with list-columns:
+#'   - question  (character)
+#'   - images    (list, ignored here)
+#'   - options   (list of character vectors)
+#'   - correct_index (numeric or list of indices)
+#'   - explanation (character, ignored here)
+#' @param file_name Path to the CSV file to write
+#'
+save_formatted_csv <- function(questions, file_name) {
+  # Build a two-column tibble
+  questions_table <- purrr::pmap_dfr(questions, function(question, images, options, correct_index, explanation) {
+    # Normalize correct_index to 1-based integer vector
+    correct_inds <- if (is.null(correct_index)) integer(0)
+    else if (is.numeric(correct_index)) correct_index + 1
+    else as.integer(unlist(correct_index)) + 1
+    # Extract correct answers and collapse with ", "
+    correct_answers <- options[correct_inds]
+    answer_str <- paste(correct_answers, collapse = ", ")
+    # Return a one-row tibble
+    tibble::tibble(question = question, answer = answer_str)
+  })
+  # Write out as CSV (no row names)
+  write.csv(questions_table, file_name, row.names = FALSE)
+}
+
+
 #' Takes in a list of questions and formats them into a structure suitable for Quizizz import.
 #'
-#' @param questions object containing question data
-#' @param file_name name of the file to save the data to
-#'
-#' @return A tibble containing the following information:
+#' @param questions A tibble or data frame with list-columns:
+#'   - question  (character)
+#'   - images    (list, ignored here)
+#'   - options   (list of character vectors)
+#'   - correct_index (numeric or list of indices)
+#'   - explanation (character, ignored here)
+#' @param file_name Path to the CSV file to write
 #'
 save_formated_quizizz <- function(questions, file_name) {
     quizizz_rows <- pmap_dfr(questions, function(question, images, options, correct_index, explanation) {
@@ -71,4 +128,6 @@ save_formated_quizizz <- function(questions, file_name) {
     })
     # Save the formatted quizzz data to a CSV file
     writexl::write_xlsx(quizizz_rows, file_name)
+    # Return the formatted quizizz rows
+    quizizz_rows
 }
