@@ -24,7 +24,7 @@ source("R/util-ccna-parse.R")
 source("R/formats/question-quizizz-format.R")
 
 library(rvest, quietly = TRUE, warn.conflicts = FALSE) # Filter through and parse html objects
-library(dplyr, quietly = TRUE, warn.conflicts = FALSE) # Mutation / Management of dataframes
+library(dplyr, quietly = TRUE, warn.conflicts = FALSE) # Mutation / Management of dataframe
 library(fs, quietly = TRUE, warn.conflicts = FALSE)
 library(zip, quietly = TRUE, warn.conflicts = FALSE)
 
