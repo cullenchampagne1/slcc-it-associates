@@ -2,3 +2,4 @@ data/raw
 .env
 .DS_Store
 **/.DS_Store
+data/canvas

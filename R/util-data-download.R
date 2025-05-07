@@ -81,5 +81,5 @@ download_fromHTML <- function(url, cache_dir = "data/raw", force_refresh = FALSE
     # Save to chache for later use
     writeLines(html_content, cache_file)
     # Return html data
-    xml2::read_html(cache_file) 
+    xml2::read_html(cache_file)
 }
