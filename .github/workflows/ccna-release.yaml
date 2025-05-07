@@ -2,8 +2,7 @@ name: Run CCNA Parse and Update Releases
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
     paths:
       - 'R/**'
       - 'formats/**'
@@ -13,12 +12,14 @@ on:
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
-
     permissions:
-      contents: write  # Required for release upload
+      contents: write          # needed for creating / editing releases
 
     steps:
-      - name: Checkout repository
+      # -----------------------------------------------------------
+      # 1. checkout & set up R
+      # -----------------------------------------------------------
+      - name: Checkout repo
         uses: actions/checkout@v4
 
       - name: Set up R
@@ -26,46 +27,48 @@ jobs:
 
       - name: Install R packages
         run: |
-          Rscript -e 'install.packages(c("rvest", "dplyr", "fs", "zip", "writexl", "stringr", "httr", "jsonlite", "readr", "purrr", "digest"))'
+          Rscript -e 'install.packages(c(
+            "rvest","dplyr","fs","zip","writexl","stringr",
+            "httr","jsonlite","readr","purrr","digest"
+          ))'
 
+      # -----------------------------------------------------------
+      # 2. run the parser – all console output captured
+      # -----------------------------------------------------------
       - name: Run parsing script and capture output
         run: |
           mkdir -p output/zips
-          Rscript R/scrpits/ccna-library-parse.R output/zips | tee console_output.log
+          Rscript R/scrpits/ccna-library-parse.R output/zips \
+            | tee console_output.log           # ⬅ keeps a copy for later
 
+      # -----------------------------------------------------------
+      # 3. create / update releases and upload artefacts
+      # -----------------------------------------------------------
       - name: Create or update releases and upload files
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          tags=$(find output/zips -type f -name "*.zip" | sed 's|.*/||' | cut -d'-' -f1 | sort -u)
+          # ── collect unique release :contentReference[oaicite:1]{index=1}
 
-          for tag in $tags; do
-            echo "Processing tag: $tag"
-            files=$(find output/zips -type f -name "${tag}-*.zip")
-            tag_links=$(grep -i "$tag" console_output.log || echo "No URLs logged for $tag")
+            # all zip files that:contentReference[oaicite:2]{index=2}any URLs your script printe:contentReference[oaicite:3]{index=3} release n:contentReference[oaicite:4]{index=4}red CCNA exam data." \
+              "Each exam is processed and packaged into multiple formats." \
+              "For full details on each format and how to use them, see the [Formats Guide](./readme.md#available-formats)" \
+              "" \
+              "included urls:" \
+              "$tag_links" > tmp_release_note.txt
 
-            # Write hardcoded header
-            cat <<'EOF' > tmp_release_note.txt
-This release contains structured CCNA exam data. Each exam is processed and packaged into multiple formats. For full details on each format and how to use them, see the [Formats Guide](./readme.md#available-formats)
-
-included urls:
-EOF
-
-            # Append dynamic URL list
-            echo "$tag_links" >> tmp_release_note.txt
-
-            # Create or update release
-            if gh release view "$tag" &>/dev/null; then
-              echo "Updating release $tag"
+            # ── create or edit the release ──
+            if gh release view "$tag" >/dev/null 2>&1; then
+              echo "  ↻ updating release $tag"
               gh release edit "$tag" --notes-file tmp_release_note.txt
             else
-              echo "Creating release $tag"
+              echo "  ➕ creating release $tag"
               gh release create "$tag" -t "$tag" --notes-file tmp_release_note.txt
             fi
 
-            # Upload all files for this release
+            # ── upload artefacts ──
             for f in $files; do
-              echo "Uploading $(basename "$f") to release $tag"
+              echo "    📦 $(basename "$f")"
               gh release upload "$tag" "$f" --clobber
             done
           done
