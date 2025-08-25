@@ -1,7 +1,7 @@
 
 ## SLCC IT Associate Degree Data analytics
 
-This repository contains canvas/ccna data from the IT Associate’s Degree program at South Louisiana Community College. It includes quiz questions, answer choices, and multiple import formats to integration with various learning platforms. In addition, data visualizations are provided to help you understand answer distributions, question lengths, and other quiz metrics.
+This repository contains canvas/ccna data from the IT Associate’s Degree program at South Louisiana Community College. It includes quiz questions, answer choices, and multiple import formats to integration with various learning platforms. In addition, data visualizations are provided to help you understand answer distributions, question lengths, and other quiz metrics. (Updated)
 
 
 ### Format Options
